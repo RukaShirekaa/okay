@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Awas Batu - Penghindar Meteor</title>
+
+  <!-- menghubungkan html ke css nya -->
+
+  <link rel="stylesheet" href="stylesheet.css">
+
+
+</head>
+<body>
+  <header>
+    <div>
+      <h1>AWAS BATU: PENGHINDAR METEOR</h1>
+      <p>Layar Permainan sebagai Jendela Clipping (Cohen-Sutherland &amp; Matriks 3x3)</p>
+    </div>
+    <div class="hud-stats">
+      <span class="stat-score" id="uiScore">SKOR: 0</span>
+      <span class="stat-level" id="uiLevel">WAVE: 1</span>
+      <span class="stat-hp" id="uiHp">PERISAI: 100%</span>
+    </div>
+  </header>
+
+  <div class="canvas-container">
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+  </div>
+
+  <div class="footer-info">
+    <div>
+      Kontrol: <kbd>A</kbd>/<kbd>D</kbd> atau <kbd>←</kbd>/<kbd>→</kbd> Gerak | <kbd>W</kbd>/<kbd>S</kbd> atau <kbd>↑</kbd>/<kbd>↓</kbd> Maju/Mundur | <kbd>SPASI</kbd> Boost Perisai
+    </div>
+    <div class="footer-actions">
+      <label class="upload-label" for="meteorImageInput">
+        🖼️ Ganti Gambar Meteor
+      </label>
+      <input type="file" id="meteorImageInput" accept="image/*" />
+      <button id="btnResetMeteorImg" type="button">Reset Meteor Bro</button>
+      <button id="btnRestart" type="button">Main Lagi Bro</button>
+    </div>
+  </div>
+
+<!-- meenghubungkan html ke js -->
+<script src="script.js"></script>
+
+
+</body>
+</html>

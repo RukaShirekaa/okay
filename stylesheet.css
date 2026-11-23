@@ -1,0 +1,94 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body {
+      background-color: #7a1e60;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      background: #4a1234;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid #d931a7;
+    }
+    header h1 { font-size: 1.2rem; color: #f570d8; letter-spacing: 1px; }
+    header p { font-size: 0.82rem; color: #f4a3df; }
+    .hud-stats {
+      display: flex;
+      gap: 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .stat-score { color: #facc15; }
+    .stat-hp { color: #f87171; }
+    .stat-level { color: #34d399; }
+    .canvas-container {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(251, 65, 242, 0.454);
+    }
+    canvas { display: block; }
+    .footer-info {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 12px;
+      background: #823972;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid #db26c9;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: #f8fafc;
+    }
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .upload-label {
+      background: #5b1d47;
+      border: 1px solid #fb63be;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .upload-label:hover { background: #702358; }
+    input[type="file"] { display: none; }
+    button {
+      background: #812f60;
+      color: white;
+      border: 1px solid #fb63be;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      box-shadow: 0 0 30px rgba(251, 65, 242, 0.454);
+    }
+    button:hover { background: #952486; }
+    kbd {
+      background: #8e2f6e;
+      border: 1px solid #51374a;
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: #e5e7eb;
+      font-size: 0.78rem;
+    }
