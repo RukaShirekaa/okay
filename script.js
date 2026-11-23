@@ -30,24 +30,24 @@ const VIEWPORT = {
 // Gambar meteor kustom (null = pakai poligon Scanline Fill bawaan)
 let customMeteorImg = null;
 
-document.getElementById('meteorImageInput').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    const img = new Image();
-    img.onload = () => {
-      customMeteorImg = img;
+const meteorInput = document.getElementById('meteorImageInput');
+if (meteorInput) {
+  meteorInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        customMeteorImg = img;
+        gameState.meteorCustomNotice = 80;
+        gameState.meteorResetNotice = 0;
+      };
+      img.src = evt.target.result;
     };
-    img.src = evt.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-document.getElementById('btnResetMeteorImg').addEventListener('click', () => {
-  customMeteorImg = null;
-  document.getElementById('meteorImageInput').value = '';
-});
+    reader.readAsDataURL(file);
+  });
+}
 
 // ============================================================================
 // 1. UTILITAS PIKSEL DASAR (ImageData) - PERTEMUAN 1
@@ -383,7 +383,9 @@ let gameState = {
   gameOver: false,
   frameTick: 0,
   hitFlash: 0,
-  shieldPulse: 0
+  shieldPulse: 0,
+  meteorResetNotice: 0,
+  meteorCustomNotice: 0
 };
 
 const player = {
@@ -464,12 +466,8 @@ function spawnExplosion(x, y, color) {
   }
 }
 
-let isCanvasDragging = false;
-let canvasTouchStartX = 0;
-let canvasTouchStartY = 0;
-let playerTouchStartX = 0;
-let playerTouchStartY = 0;
-let lastDragX = 0;
+let isTouchControlling = false;
+let lastTouchCanvasX = null;
 
 function resetGame() {
   gameState = {
@@ -484,7 +482,8 @@ function resetGame() {
   player.x = WIDTH / 2;
   player.y = HEIGHT - 115;
   player.tilt = 0;
-  isCanvasDragging = false;
+  isTouchControlling = false;
+  lastTouchCanvasX = null;
   meteors = [];
   particles = [];
   for (let i = 0; i < 5; i++) {
@@ -496,6 +495,45 @@ function resetGame() {
 }
 
 document.getElementById('btnRestart').addEventListener('click', resetGame);
+
+function resetMeteors() {
+  customMeteorImg = null;
+  const input = document.getElementById('meteorImageInput');
+  if (input) input.value = '';
+
+  // Bersihkan meteor lama dengan efek ledakan partikel
+  for (const m of meteors) {
+    spawnExplosion(m.x, m.y, [251, 146, 60]);
+  }
+
+  // Spawn ulang 5 meteor awal dari atas arena
+  meteors = [];
+  for (let i = 0; i < 5; i++) {
+    const m = createMeteor();
+    m.y = VIEWPORT.ymin - 30 - i * 95;
+    meteors.push(m);
+  }
+
+  // Tampilkan notifikasi visual di layar permainan
+  gameState.meteorResetNotice = 80;
+  gameState.meteorCustomNotice = 0;
+
+  // Efek visual pada tombol
+  const btn = document.getElementById('btnResetMeteorImg');
+  if (btn) {
+    btn.classList.add('btn-success-glow');
+    btn.textContent = '✨ Berhasil Direset!';
+    setTimeout(() => {
+      btn.classList.remove('btn-success-glow');
+      btn.textContent = 'Reset Meteor Bro';
+    }, 1200);
+  }
+}
+
+const btnResetMeteor = document.getElementById('btnResetMeteorImg');
+if (btnResetMeteor) {
+  btnResetMeteor.addEventListener('click', resetMeteors);
+}
 
 function updateHUD() {
   document.getElementById('uiScore').textContent = `SKOR: ${Math.floor(gameState.score)}`;
@@ -516,13 +554,17 @@ function update() {
   if (gameState.hitFlash > 0) gameState.hitFlash--;
   if (gameState.shieldPulse > 0) gameState.shieldPulse--;
 
-  let moveX = 0, moveY = 0;
-  if (keys['ArrowLeft'] || keys['KeyA']) moveX -= 1;
-  if (keys['ArrowRight'] || keys['KeyD']) moveX += 1;
-  if (keys['ArrowUp'] || keys['KeyW']) moveY -= 1;
-  if (keys['ArrowDown'] || keys['KeyS']) moveY += 1;
+  if (isTouchControlling) {
+    // Saat sedang dikendalikan sentuhan jari, kemiringan roket perlahan stabil
+    player.tilt *= 0.85;
+  } else {
+    // Kontrol Keyboard (PC/Laptop)
+    let moveX = 0, moveY = 0;
+    if (keys['ArrowLeft'] || keys['KeyA']) moveX -= 1;
+    if (keys['ArrowRight'] || keys['KeyD']) moveX += 1;
+    if (keys['ArrowUp'] || keys['KeyW']) moveY -= 1;
+    if (keys['ArrowDown'] || keys['KeyS']) moveY += 1;
 
-  if (!isCanvasDragging) {
     player.x += moveX * player.speed;
     player.y += moveY * player.speed;
     player.tilt = moveX * 0.25;
@@ -672,6 +714,24 @@ function render() {
   ctx.textAlign = "left";
   ctx.fillText("JENDELA CLIPPING COHEN-SUTHERLAND [45, 45 - 855, 555]", VIEWPORT.xmin, VIEWPORT.ymin - 12);
 
+  if (gameState.meteorResetNotice > 0) {
+    gameState.meteorResetNotice--;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#34d399";
+    ctx.font = "bold 18px Segoe UI";
+    ctx.fillText("✨ METEOR BERHASIL DIRESET KE DEFAULT ✨", WIDTH / 2, VIEWPORT.ymin + 38);
+    ctx.restore();
+  } else if (gameState.meteorCustomNotice > 0) {
+    gameState.meteorCustomNotice--;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 18px Segoe UI";
+    ctx.fillText("🖼️ GAMBAR METEOR KUSTOM AKTIF!", WIDTH / 2, VIEWPORT.ymin + 38);
+    ctx.restore();
+  }
+
   if (gameState.gameOver) {
     ctx.fillStyle = "rgba(9, 13, 22, 0.82)";
     ctx.fillRect(VIEWPORT.xmin, VIEWPORT.ymin, VIEWPORT.xmax - VIEWPORT.xmin, VIEWPORT.ymax - VIEWPORT.ymin);
@@ -692,10 +752,90 @@ function render() {
 }
 
 // ============================================================================
-// 8. KONTROL TOUCH / SMARTPHONE (SENTUH LAYAR & TOMBOL VIRTUAL)
+// 8. KONTROL TOUCH LANGSUNG (HP / SMARTPHONE) - ROKET MENGIKUTI JARI
 // ============================================================================
+let lastTapTime = 0;
 
-// --- A. Kontrol Sentuh Langsung pada Canvas (Touch & Drag) ---
+function moveRocketToFinger(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  const scaleX = WIDTH / rect.width;
+  const scaleY = HEIGHT / rect.height;
+
+  const canvasX = (clientX - rect.left) * scaleX;
+  const canvasY = (clientY - rect.top) * scaleY;
+
+  // Efek kemiringan (tilt) dinamis mengikuti gerakan geser jari
+  if (lastTouchCanvasX !== null) {
+    const deltaX = canvasX - lastTouchCanvasX;
+    player.tilt = Math.max(-0.45, Math.min(0.45, deltaX * 0.08));
+  }
+  lastTouchCanvasX = canvasX;
+
+  // Roket langsung digeser mengikuti posisi jari (diberi offset -25px agar tidak tertutup jempol)
+  player.x = Math.max(VIEWPORT.xmin + 26, Math.min(VIEWPORT.xmax - 26, canvasX));
+  player.y = Math.max(VIEWPORT.ymin + 30, Math.min(VIEWPORT.ymax - 26, canvasY - 25));
+}
+
+function handlePointerStart(clientX, clientY) {
+  if (gameState.gameOver) {
+    resetGame();
+    return;
+  }
+
+  // Ketukan ganda (double-tap) untuk mengaktifkan Boost Perisai
+  const now = Date.now();
+  if (now - lastTapTime < 320) {
+    if (gameState.shieldPulse <= 0) {
+      gameState.shieldPulse = 35;
+    }
+  }
+  lastTapTime = now;
+
+  isTouchControlling = true;
+  lastTouchCanvasX = null;
+  moveRocketToFinger(clientX, clientY);
+}
+
+function handlePointerMove(clientX, clientY) {
+  if (!isTouchControlling || gameState.gameOver) return;
+  moveRocketToFinger(clientX, clientY);
+}
+
+function handlePointerEnd() {
+  if (isTouchControlling) {
+    isTouchControlling = false;
+    lastTouchCanvasX = null;
+    player.tilt = 0;
+  }
+}
+
+// 1. Pointer Events (Standar Modern W3C: Menangani layar sentuh, mouse, dan stylus secara seragam)
+canvas.addEventListener('pointerdown', (e) => {
+  try {
+    canvas.setPointerCapture(e.pointerId);
+  } catch (err) {}
+  handlePointerStart(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  handlePointerMove(e.clientX, e.clientY);
+});
+
+const onPointerUp = (e) => {
+  try {
+    if (canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+      canvas.releasePointerCapture(e.pointerId);
+    }
+  } catch (err) {}
+  handlePointerEnd();
+};
+
+canvas.addEventListener('pointerup', onPointerUp);
+canvas.addEventListener('pointercancel', onPointerUp);
+
+// 2. Touch Events (Dukungan penuh untuk seluruh browser HP: iOS Safari, Chrome Android, dll.)
 canvas.addEventListener('touchstart', (e) => {
   if (gameState.gameOver) {
     e.preventDefault();
@@ -712,179 +852,40 @@ canvas.addEventListener('touchstart', (e) => {
     return;
   }
 
-  e.preventDefault();
-  const touch = e.touches[0];
-  isCanvasDragging = true;
-  canvasTouchStartX = touch.clientX;
-  canvasTouchStartY = touch.clientY;
-  lastDragX = touch.clientX;
-  playerTouchStartX = player.x;
-  playerTouchStartY = player.y;
-}, { passive: false });
-
-canvas.addEventListener('touchmove', (e) => {
-  if (!isCanvasDragging || gameState.gameOver) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = WIDTH / rect.width;
-  const scaleY = HEIGHT / rect.height;
-
-  const dx = (touch.clientX - canvasTouchStartX) * scaleX;
-  const dy = (touch.clientY - canvasTouchStartY) * scaleY;
-
-  const moveDeltaX = touch.clientX - lastDragX;
-  lastDragX = touch.clientX;
-  player.tilt = Math.max(-0.4, Math.min(0.4, moveDeltaX * 0.08));
-
-  player.x = Math.max(VIEWPORT.xmin + 26, Math.min(VIEWPORT.xmax - 26, playerTouchStartX + dx));
-  player.y = Math.max(VIEWPORT.ymin + 30, Math.min(VIEWPORT.ymax - 26, playerTouchStartY + dy));
-}, { passive: false });
-
-const endCanvasTouch = () => {
-  if (isCanvasDragging) {
-    isCanvasDragging = false;
-    player.tilt = 0;
+  // Double tap
+  const now = Date.now();
+  if (now - lastTapTime < 320) {
+    if (gameState.shieldPulse <= 0) {
+      gameState.shieldPulse = 35;
+    }
   }
-};
+  lastTapTime = now;
 
-canvas.addEventListener('touchend', endCanvasTouch, { passive: false });
-canvas.addEventListener('touchcancel', endCanvasTouch, { passive: false });
-window.addEventListener('touchend', endCanvasTouch);
-window.addEventListener('touchcancel', endCanvasTouch);
+  if (e.touches.length > 0) {
+    e.preventDefault();
+    isTouchControlling = true;
+    lastTouchCanvasX = null;
+    moveRocketToFinger(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: false });
 
-// Klik / sentuh pada canvas saat Game Over untuk main lagi
+window.addEventListener('touchmove', (e) => {
+  if (!isTouchControlling || gameState.gameOver) return;
+  if (e.touches.length > 0) {
+    e.preventDefault();
+    moveRocketToFinger(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: false });
+
+window.addEventListener('touchend', handlePointerEnd);
+window.addEventListener('touchcancel', handlePointerEnd);
+
+// Klik pada canvas untuk mulai ulang saat Game Over
 canvas.addEventListener('click', () => {
   if (gameState.gameOver) {
     resetGame();
   }
 });
-
-// --- B. Kontrol Virtual D-Pad (Arah) & Tombol Boost Perisai ---
-const dpadContainer = document.getElementById('dpadContainer');
-const btnUp = document.getElementById('btnUp');
-const btnDown = document.getElementById('btnDown');
-const btnLeft = document.getElementById('btnLeft');
-const btnRight = document.getElementById('btnRight');
-const btnBoost = document.getElementById('btnBoost');
-
-if (dpadContainer) {
-  let isDpadActive = false;
-
-  function handleDpadPoint(clientX, clientY) {
-    const rect = dpadContainer.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = clientX - centerX;
-    const dy = clientY - centerY;
-    const deadZone = 14;
-
-    const up = dy < -deadZone;
-    const down = dy > deadZone;
-    const left = dx < -deadZone;
-    const right = dx > deadZone;
-
-    keys['ArrowUp'] = up;
-    keys['ArrowDown'] = down;
-    keys['ArrowLeft'] = left;
-    keys['ArrowRight'] = right;
-
-    if (btnUp) btnUp.classList.toggle('active', up);
-    if (btnDown) btnDown.classList.toggle('active', down);
-    if (btnLeft) btnLeft.classList.toggle('active', left);
-    if (btnRight) btnRight.classList.toggle('active', right);
-  }
-
-  function releaseDpad() {
-    if (!isDpadActive) return;
-    isDpadActive = false;
-    keys['ArrowUp'] = false;
-    keys['ArrowDown'] = false;
-    keys['ArrowLeft'] = false;
-    keys['ArrowRight'] = false;
-
-    if (btnUp) btnUp.classList.remove('active');
-    if (btnDown) btnDown.classList.remove('active');
-    if (btnLeft) btnLeft.classList.remove('active');
-    if (btnRight) btnRight.classList.remove('active');
-  }
-
-  dpadContainer.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    isDpadActive = true;
-    const touch = e.touches[0];
-    handleDpadPoint(touch.clientX, touch.clientY);
-  }, { passive: false });
-
-  dpadContainer.addEventListener('touchmove', (e) => {
-    if (!isDpadActive) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    handleDpadPoint(touch.clientX, touch.clientY);
-  }, { passive: false });
-
-  dpadContainer.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    releaseDpad();
-  }, { passive: false });
-
-  dpadContainer.addEventListener('touchcancel', (e) => {
-    e.preventDefault();
-    releaseDpad();
-  }, { passive: false });
-
-  window.addEventListener('touchend', releaseDpad);
-  window.addEventListener('touchcancel', releaseDpad);
-
-  // Mouse fallback untuk tombol D-Pad
-  const setupMouseBtn = (btn, key) => {
-    if (!btn) return;
-    btn.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      keys[key] = true;
-      btn.classList.add('active');
-    });
-    const cancel = () => {
-      keys[key] = false;
-      btn.classList.remove('active');
-    };
-    btn.addEventListener('mouseup', cancel);
-    btn.addEventListener('mouseleave', cancel);
-  };
-
-  setupMouseBtn(btnUp, 'ArrowUp');
-  setupMouseBtn(btnDown, 'ArrowDown');
-  setupMouseBtn(btnLeft, 'ArrowLeft');
-  setupMouseBtn(btnRight, 'ArrowRight');
-}
-
-if (btnBoost) {
-  let isBoostActive = false;
-
-  const activateBoost = (e) => {
-    e.preventDefault();
-    isBoostActive = true;
-    btnBoost.classList.add('active');
-    if (!gameState.gameOver && gameState.shieldPulse <= 0) {
-      gameState.shieldPulse = 35;
-    }
-  };
-
-  const endBoost = () => {
-    if (!isBoostActive) return;
-    isBoostActive = false;
-    btnBoost.classList.remove('active');
-  };
-
-  btnBoost.addEventListener('touchstart', activateBoost, { passive: false });
-  btnBoost.addEventListener('touchend', endBoost, { passive: false });
-  btnBoost.addEventListener('touchcancel', endBoost, { passive: false });
-  btnBoost.addEventListener('mousedown', activateBoost);
-  btnBoost.addEventListener('mouseup', endBoost);
-  btnBoost.addEventListener('mouseleave', endBoost);
-  window.addEventListener('touchend', endBoost);
-  window.addEventListener('touchcancel', endBoost);
-}
 
 function gameLoop() {
   update();

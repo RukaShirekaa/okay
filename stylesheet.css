@@ -5,18 +5,28 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background-color: #7a1e60;
   color: #f8fafc;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 16px;
-  width: 100%;
-  overflow-x: hidden;
+  padding: 12px 10px;
+}
+
+@media (min-width: 920px) and (min-height: 750px) {
+  body {
+    justify-content: center;
+    padding: 16px;
+  }
 }
 
 header {
@@ -25,27 +35,28 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   background: #4a1234;
-  padding: 12px 20px;
+  padding: 12px 18px;
   border-radius: 10px;
   border: 1px solid #d931a7;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
 }
 
 header h1 {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: #f570d8;
   letter-spacing: 1px;
 }
 
 header p {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #f4a3df;
 }
 
 .hud-stats {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   font-weight: 700;
   font-size: 0.95rem;
 }
@@ -62,6 +73,8 @@ header p {
   overflow: hidden;
   box-shadow: 0 0 30px rgba(251, 65, 242, 0.454);
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 canvas {
@@ -70,150 +83,21 @@ canvas {
   height: auto;
   aspect-ratio: 900 / 600;
   touch-action: none;
-}
-
-/* ==========================================================================
-   KONTROL VIRTUAL (SMARTPHONE / LAYAR SENTUH)
-   ========================================================================== */
-.mobile-controls {
-  display: flex;
-  width: 100%;
-  max-width: 900px;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  padding: 10px 18px;
-  background: rgba(74, 18, 52, 0.85);
-  border: 1px solid #d931a7;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   user-select: none;
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: none;
+  cursor: grab;
 }
 
-.dpad-container {
-  display: grid;
-  grid-template-columns: 48px 48px 48px;
-  grid-template-rows: 48px 48px 48px;
-  gap: 6px;
-  justify-content: center;
-  align-content: center;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
+canvas:active {
+  cursor: grabbing;
 }
 
-.ctrl-btn {
-  background: #5b1d47;
-  color: #fdf2f8;
-  border: 2px solid #fb63be;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  transition: transform 0.06s ease, background 0.06s ease, border-color 0.06s ease, box-shadow 0.06s ease;
-}
-
-.ctrl-btn:active,
-.ctrl-btn.active {
-  background: #a21c7d;
-  border-color: #fbcfe8;
-  transform: scale(0.92);
-  box-shadow: 0 0 16px rgba(251, 99, 190, 0.85);
-}
-
-.ctrl-up {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.ctrl-left {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.dpad-center {
-  grid-column: 2;
-  grid-row: 2;
-  background: #390d28;
-  border-radius: 6px;
-  border: 1px solid #751b58;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
-}
-
-.ctrl-right {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.ctrl-down {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-.action-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-right: 8px;
-}
-
-.ctrl-boost {
-  width: 82px;
-  height: 82px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0284c7 0%, #db26c9 100%);
-  border: 3px solid #38bdf8;
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
-  color: white;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-}
-
-.ctrl-boost:active,
-.ctrl-boost.active {
-  transform: scale(0.92);
-  background: linear-gradient(135deg, #0369a1 0%, #be185d 100%);
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.95);
-}
-
-.boost-icon {
-  font-size: 1.45rem;
-  line-height: 1;
-}
-
-.boost-title {
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  margin-top: 2px;
-}
-
-.boost-sub {
-  font-size: 0.58rem;
-  opacity: 0.9;
-  font-weight: 600;
-}
-
-/* ==========================================================================
-   FOOTER & KONTROL BAWAH
-   ========================================================================== */
 .footer-info {
   width: 100%;
   max-width: 900px;
-  margin-top: 12px;
+  margin-top: 10px;
   background: #823972;
-  padding: 10px 20px;
+  padding: 10px 18px;
   border-radius: 10px;
   border: 1px solid #db26c9;
   display: flex;
@@ -240,9 +124,11 @@ canvas {
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
-  touch-action: manipulation;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .upload-label:hover { background: #702358; }
@@ -257,11 +143,21 @@ button {
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
-  box-shadow: 0 0 30px rgba(251, 65, 242, 0.454);
+  box-shadow: 0 0 20px rgba(251, 65, 242, 0.4);
   touch-action: manipulation;
+  user-select: none;
+  transition: background 0.1s ease, transform 0.08s ease;
 }
 
 button:hover { background: #952486; }
+button:active { transform: scale(0.96); }
+
+button.btn-success-glow {
+  background: #059669 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 25px rgba(52, 211, 153, 0.95) !important;
+  transform: scale(1.04);
+}
 
 kbd {
   background: #8e2f6e;
@@ -273,20 +169,11 @@ kbd {
 }
 
 /* ==========================================================================
-   MEDIA QUERIES (DESKTOP vs MOBILE)
+   RESPONSIF MOBILE / SMARTPHONE & TABLET
    ========================================================================== */
-/* Di monitor PC/Laptop besar yang menggunakan mouse fisik, sembunyikan kontrol virtual */
-@media (min-width: 901px) and (pointer: fine) {
-  .mobile-controls {
-    display: none;
-  }
-}
-
-/* Penyesuaian Responsif untuk Layar Tablet & Smartphone (<= 768px) */
 @media (max-width: 768px) {
   body {
-    padding: 10px 8px;
-    justify-content: flex-start;
+    padding: 8px 8px 16px 8px;
   }
 
   header {
@@ -299,26 +186,23 @@ kbd {
 
   header h1 {
     font-size: 1.05rem;
+    line-height: 1.2;
   }
 
   header p {
     font-size: 0.72rem;
+    line-height: 1.25;
     margin-top: 2px;
   }
 
   .hud-stats {
     width: 100%;
     justify-content: space-around;
-    font-size: 0.85rem;
-    gap: 6px;
+    font-size: 0.88rem;
+    gap: 8px;
     background: rgba(0, 0, 0, 0.25);
     padding: 6px 10px;
     border-radius: 6px;
-  }
-
-  .mobile-controls {
-    margin-top: 8px;
-    padding: 8px 12px;
   }
 
   .footer-info {
@@ -334,45 +218,30 @@ kbd {
     justify-content: center;
     gap: 8px;
   }
-
-  button, .upload-label {
-    padding: 8px 12px;
-    font-size: 0.8rem;
-  }
 }
 
-/* Penyesuaian Tambahan untuk Smartphone Layar Kecil (<= 400px) */
-@media (max-width: 400px) {
-  .dpad-container {
-    grid-template-columns: 40px 40px 40px;
-    grid-template-rows: 40px 40px 40px;
-    gap: 4px;
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 0.95rem;
   }
 
-  .ctrl-btn {
-    font-size: 1rem;
+  header p {
+    font-size: 0.68rem;
   }
 
-  .ctrl-boost {
-    width: 72px;
-    height: 72px;
+  .hud-stats {
+    font-size: 0.8rem;
   }
 
-  .boost-icon {
-    font-size: 1.3rem;
-  }
-
-  .boost-title {
-    font-size: 0.65rem;
-  }
-
-  .boost-sub {
-    font-size: 0.52rem;
+  .footer-info {
+    font-size: 0.78rem;
   }
 
   .footer-actions {
+    display: flex;
     flex-direction: column;
     width: 100%;
+    gap: 6px;
   }
 
   .footer-actions button,
@@ -380,5 +249,6 @@ kbd {
     width: 100%;
     text-align: center;
     justify-content: center;
+    padding: 8px 12px;
   }
 }
