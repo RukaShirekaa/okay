@@ -464,6 +464,13 @@ function spawnExplosion(x, y, color) {
   }
 }
 
+let isCanvasDragging = false;
+let canvasTouchStartX = 0;
+let canvasTouchStartY = 0;
+let playerTouchStartX = 0;
+let playerTouchStartY = 0;
+let lastDragX = 0;
+
 function resetGame() {
   gameState = {
     score: 0,
@@ -477,6 +484,7 @@ function resetGame() {
   player.x = WIDTH / 2;
   player.y = HEIGHT - 115;
   player.tilt = 0;
+  isCanvasDragging = false;
   meteors = [];
   particles = [];
   for (let i = 0; i < 5; i++) {
@@ -514,12 +522,14 @@ function update() {
   if (keys['ArrowUp'] || keys['KeyW']) moveY -= 1;
   if (keys['ArrowDown'] || keys['KeyS']) moveY += 1;
 
-  player.x += moveX * player.speed;
-  player.y += moveY * player.speed;
-  player.tilt = moveX * 0.25;
+  if (!isCanvasDragging) {
+    player.x += moveX * player.speed;
+    player.y += moveY * player.speed;
+    player.tilt = moveX * 0.25;
 
-  player.x = Math.max(VIEWPORT.xmin + 26, Math.min(VIEWPORT.xmax - 26, player.x));
-  player.y = Math.max(VIEWPORT.ymin + 30, Math.min(VIEWPORT.ymax - 26, player.y));
+    player.x = Math.max(VIEWPORT.xmin + 26, Math.min(VIEWPORT.xmax - 26, player.x));
+    player.y = Math.max(VIEWPORT.ymin + 30, Math.min(VIEWPORT.ymax - 26, player.y));
+  }
 
   const targetMeteors = 5 + gameState.wave * 2;
   if (meteors.length < targetMeteors && Math.random() < 0.08) {
@@ -679,6 +689,201 @@ function render() {
     ctx.font = "14px Segoe UI";
     ctx.fillText("Klik tombol 'Main Lagi Bro' di kanan bawah untuk bermain lagi", WIDTH / 2, HEIGHT / 2 + 50);
   }
+}
+
+// ============================================================================
+// 8. KONTROL TOUCH / SMARTPHONE (SENTUH LAYAR & TOMBOL VIRTUAL)
+// ============================================================================
+
+// --- A. Kontrol Sentuh Langsung pada Canvas (Touch & Drag) ---
+canvas.addEventListener('touchstart', (e) => {
+  if (gameState.gameOver) {
+    e.preventDefault();
+    resetGame();
+    return;
+  }
+
+  // Sentuhan 2 jari otomatis mengaktifkan Boost Perisai
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+    if (gameState.shieldPulse <= 0) {
+      gameState.shieldPulse = 35;
+    }
+    return;
+  }
+
+  e.preventDefault();
+  const touch = e.touches[0];
+  isCanvasDragging = true;
+  canvasTouchStartX = touch.clientX;
+  canvasTouchStartY = touch.clientY;
+  lastDragX = touch.clientX;
+  playerTouchStartX = player.x;
+  playerTouchStartY = player.y;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (!isCanvasDragging || gameState.gameOver) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = WIDTH / rect.width;
+  const scaleY = HEIGHT / rect.height;
+
+  const dx = (touch.clientX - canvasTouchStartX) * scaleX;
+  const dy = (touch.clientY - canvasTouchStartY) * scaleY;
+
+  const moveDeltaX = touch.clientX - lastDragX;
+  lastDragX = touch.clientX;
+  player.tilt = Math.max(-0.4, Math.min(0.4, moveDeltaX * 0.08));
+
+  player.x = Math.max(VIEWPORT.xmin + 26, Math.min(VIEWPORT.xmax - 26, playerTouchStartX + dx));
+  player.y = Math.max(VIEWPORT.ymin + 30, Math.min(VIEWPORT.ymax - 26, playerTouchStartY + dy));
+}, { passive: false });
+
+const endCanvasTouch = () => {
+  if (isCanvasDragging) {
+    isCanvasDragging = false;
+    player.tilt = 0;
+  }
+};
+
+canvas.addEventListener('touchend', endCanvasTouch, { passive: false });
+canvas.addEventListener('touchcancel', endCanvasTouch, { passive: false });
+window.addEventListener('touchend', endCanvasTouch);
+window.addEventListener('touchcancel', endCanvasTouch);
+
+// Klik / sentuh pada canvas saat Game Over untuk main lagi
+canvas.addEventListener('click', () => {
+  if (gameState.gameOver) {
+    resetGame();
+  }
+});
+
+// --- B. Kontrol Virtual D-Pad (Arah) & Tombol Boost Perisai ---
+const dpadContainer = document.getElementById('dpadContainer');
+const btnUp = document.getElementById('btnUp');
+const btnDown = document.getElementById('btnDown');
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+const btnBoost = document.getElementById('btnBoost');
+
+if (dpadContainer) {
+  let isDpadActive = false;
+
+  function handleDpadPoint(clientX, clientY) {
+    const rect = dpadContainer.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
+    const deadZone = 14;
+
+    const up = dy < -deadZone;
+    const down = dy > deadZone;
+    const left = dx < -deadZone;
+    const right = dx > deadZone;
+
+    keys['ArrowUp'] = up;
+    keys['ArrowDown'] = down;
+    keys['ArrowLeft'] = left;
+    keys['ArrowRight'] = right;
+
+    if (btnUp) btnUp.classList.toggle('active', up);
+    if (btnDown) btnDown.classList.toggle('active', down);
+    if (btnLeft) btnLeft.classList.toggle('active', left);
+    if (btnRight) btnRight.classList.toggle('active', right);
+  }
+
+  function releaseDpad() {
+    if (!isDpadActive) return;
+    isDpadActive = false;
+    keys['ArrowUp'] = false;
+    keys['ArrowDown'] = false;
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+
+    if (btnUp) btnUp.classList.remove('active');
+    if (btnDown) btnDown.classList.remove('active');
+    if (btnLeft) btnLeft.classList.remove('active');
+    if (btnRight) btnRight.classList.remove('active');
+  }
+
+  dpadContainer.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isDpadActive = true;
+    const touch = e.touches[0];
+    handleDpadPoint(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  dpadContainer.addEventListener('touchmove', (e) => {
+    if (!isDpadActive) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    handleDpadPoint(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  dpadContainer.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    releaseDpad();
+  }, { passive: false });
+
+  dpadContainer.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    releaseDpad();
+  }, { passive: false });
+
+  window.addEventListener('touchend', releaseDpad);
+  window.addEventListener('touchcancel', releaseDpad);
+
+  // Mouse fallback untuk tombol D-Pad
+  const setupMouseBtn = (btn, key) => {
+    if (!btn) return;
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      keys[key] = true;
+      btn.classList.add('active');
+    });
+    const cancel = () => {
+      keys[key] = false;
+      btn.classList.remove('active');
+    };
+    btn.addEventListener('mouseup', cancel);
+    btn.addEventListener('mouseleave', cancel);
+  };
+
+  setupMouseBtn(btnUp, 'ArrowUp');
+  setupMouseBtn(btnDown, 'ArrowDown');
+  setupMouseBtn(btnLeft, 'ArrowLeft');
+  setupMouseBtn(btnRight, 'ArrowRight');
+}
+
+if (btnBoost) {
+  let isBoostActive = false;
+
+  const activateBoost = (e) => {
+    e.preventDefault();
+    isBoostActive = true;
+    btnBoost.classList.add('active');
+    if (!gameState.gameOver && gameState.shieldPulse <= 0) {
+      gameState.shieldPulse = 35;
+    }
+  };
+
+  const endBoost = () => {
+    if (!isBoostActive) return;
+    isBoostActive = false;
+    btnBoost.classList.remove('active');
+  };
+
+  btnBoost.addEventListener('touchstart', activateBoost, { passive: false });
+  btnBoost.addEventListener('touchend', endBoost, { passive: false });
+  btnBoost.addEventListener('touchcancel', endBoost, { passive: false });
+  btnBoost.addEventListener('mousedown', activateBoost);
+  btnBoost.addEventListener('mouseup', endBoost);
+  btnBoost.addEventListener('mouseleave', endBoost);
+  window.addEventListener('touchend', endBoost);
+  window.addEventListener('touchcancel', endBoost);
 }
 
 function gameLoop() {
